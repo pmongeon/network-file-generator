@@ -1,0 +1,55 @@
+---
+title: "Network generator"
+author: "Philippe Mongeon"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+
+```
+
+# Objectives
+
+The goal is to generate a co-author network from the Bibliobox template.
+
+## Load packages
+
+Here I load the tidyverse package for the reading and wrangling of data and readxl to read the file from bibliobox
+
+```{r}
+library(tidyverse)
+library(readxl)
+```
+
+## Load the data
+
+We load the CSV generated from bibliobox app
+
+```{r eval=FALSE}
+
+openalex_data <- read_xlsx("data/BiblioBox_1.xlsx")
+```
+
+### Extract authors data
+
+First we want to create a tibble called authorships and store in it the custom_id and the
+
+```{r}
+auhtorships <- openalex_data %>% 
+  select(custom_id, authors) %>% 
+  separate_rows(authors, sep=", ")
+```
+
+```{r}
+network <- authorships %>% 
+  inner_join(authorships, by="custom_id") %>% 
+  filter(authors.x < authors.y) %>%
+  group_by(authors.x, authors.y) %>%
+  summarize(weight = n()) %>% 
+  mutate(type = "undirected") %>% 
+  rename(source = authors.x, target = authors.y)
+```
