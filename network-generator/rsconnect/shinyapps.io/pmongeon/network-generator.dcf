@@ -5,10 +5,10 @@ account: pmongeon
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 7687632
-bundleId: 6536457
+bundleId: 6539011
 url: https://pmongeon.shinyapps.io/network-generator/
-when: 1668992571.90716
-lastSyncTime: 1668992571.90718
+when: 1669044973.43724
+lastSyncTime: 1669044973.43726
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: art|aut|ins
+ignoredFiles: app - Copy.R|art|aut|ins

@@ -11,6 +11,7 @@
 #CC-BY license
 #
 
+
 library(shiny)
 library(shinycssloaders)
 library(dplyr)
@@ -20,7 +21,6 @@ library(openalexR)
 library(tidyr)
 library(tibble)
 library(writexl)
-library(shinyBS)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -53,26 +53,21 @@ ui <- fluidPage(
                                              "Direct citations" = "direct_citation",
                                              "Co-citations" = "co-citations",
                                              "Bibliographic coupling" = "bibliographic_coupling"),
-                 ),
+                              ),
                  
                  
                  # Download Button-------------------------------------------------------------
-                 #             tags$hr(style = "border-top: 1.5px solid #000000;"),
-                 #             h4("Files to calculate and download"),
-                 #             br(),
+                 
+                 #downloadButton("downloadData", "Compute and download")
+                 
+                 # Download Button-------------------------------------------------------------
+    #             tags$hr(style = "border-top: 1.5px solid #000000;"),
+    #             h4("Files to calculate and download"),
+    #             br(),
                  
                  downloadButton("downloadNode", "Compute"),
-                 #             downloadButton("downloadEdges", "Compute edges")
+    #             downloadButton("downloadEdges", "Compute edges")
                  
-                 br(),
-                 tags$hr(style = "border-top: 1.5px solid #000000;"),
-                 #reset button -------------------------------------------------
-                 tags$p("Before running another entity or network, please refresh the app."),
-                 tags$a(href="javascript:history.go(0)", 
-                        popify(tags$i(class="fa fa-refresh fa-2x"),
-                               title = "Refresh", 
-                               content = "Refresh the session if you change Entity or Network type.",
-                               placement = "right"))
                  
     ),#close sidebarPanel
     
@@ -88,8 +83,8 @@ server <- function(input, output) {
   #create and modify dataframe-------------------------------------------------------
   nodesData <- eventReactive(input$file1, {
     req(input$file1)
-    
-    
+
+
     if(input$entity == "author"){
       nodes<-read_excel(input$file1$datapath) %>% 
         select(temp_id, authors) %>%
@@ -101,24 +96,24 @@ server <- function(input, output) {
         rename(label = authors) %>%
         filter(!is.na(label))
       if(input$network_type == "co-occurence") {
-        edges = read_excel(input$file1$datapath, sheet = 1) %>%
-          select(temp_id, authors) %>%
-          separate_rows(authors, sep=", ", convert=TRUE) %>%
-          mutate(authors=str_remove_all(authors,'"')) %>%
-          inner_join(nodes, by=c("authors"="label")) %>%
-          select(temp_id, id) %>%
-          inner_join(read_excel(input$file1$datapath) %>%
-                       select(temp_id, authors) %>%
-                       separate_rows(authors, sep=", ", convert=TRUE) %>%
-                       mutate(authors=str_remove_all(authors,'"')) %>%
-                       inner_join(nodes, by=c("authors"="label")) %>%
-                       select(temp_id, id),
-                     by="temp_id") %>%
-          filter(id.x < id.y) %>%
-          group_by(id.x, id.y) %>%
-          summarize(weight = n()) %>%
-          mutate(type = "undirected") %>%
-          rename(source = id.x, target = id.y)
+      edges = read_excel(input$file1$datapath, sheet = 1) %>%
+        select(temp_id, authors) %>%
+        separate_rows(authors, sep=", ", convert=TRUE) %>%
+        mutate(authors=str_remove_all(authors,'"')) %>%
+        inner_join(nodes, by=c("authors"="label")) %>%
+        select(temp_id, id) %>%
+        inner_join(read_excel(input$file1$datapath) %>%
+                     select(temp_id, authors) %>%
+                     separate_rows(authors, sep=", ", convert=TRUE) %>%
+                     mutate(authors=str_remove_all(authors,'"')) %>%
+                     inner_join(nodes, by=c("authors"="label")) %>%
+                     select(temp_id, id),
+                   by="temp_id") %>%
+        filter(id.x < id.y) %>%
+        group_by(id.x, id.y) %>%
+        summarize(weight = n()) %>%
+        mutate(type = "undirected") %>%
+        rename(source = id.x, target = id.y)
       }
       if(input$network_type == "direct_citation"){
         edges = read_excel(input$file1$datapath) %>%
@@ -160,29 +155,29 @@ server <- function(input, output) {
           group_by(source, target) %>%
           summarize(weight = n()) %>% 
           mutate(type = "undirected")
-      }
-      if(input$network_type == "bibliographic_coupling"){
-        edges = read_excel(input$file1$datapath) %>%
-          select(openalex_id, authors, cited_ids) %>%
-          separate_rows(cited_ids, sep=", ", convert=TRUE) %>%
-          inner_join(read_excel(input$file1$datapath) %>%
-                       select(openalex_id, authors, cited_ids) %>%
-                       separate_rows(cited_ids, sep=", ", convert=TRUE),
-                     by="cited_ids") %>% 
-          separate_rows(authors.x, sep=", ", convert=TRUE) %>%
-          mutate(authors.x = str_remove_all(authors.x, '"')) %>% 
-          separate_rows(authors.y, sep=", ", convert=TRUE) %>%
-          mutate(authors.y = str_remove_all(authors.y, '"')) %>%
-          inner_join(select(nodes, id, label), by=c("authors.x" = "label")) %>% 
-          inner_join(select(nodes, id, label), by=c("authors.y" = "label")) %>% 
-          select(source = id.x, target = id.y) %>% 
-          filter(source < target) %>% 
-          group_by(source, target) %>%
-          summarize(weight = n()) %>% 
-          mutate(type = "undirected")
-      }
+        }
+        if(input$network_type == "bibliographic_coupling"){
+          edges = read_excel(input$file1$datapath) %>%
+            select(openalex_id, authors, cited_ids) %>%
+            separate_rows(cited_ids, sep=", ", convert=TRUE) %>%
+            inner_join(read_excel(input$file1$datapath) %>%
+                         select(openalex_id, authors, cited_ids) %>%
+                         separate_rows(cited_ids, sep=", ", convert=TRUE),
+                       by="cited_ids") %>% 
+            separate_rows(authors.x, sep=", ", convert=TRUE) %>%
+            mutate(authors.x = str_remove_all(authors.x, '"')) %>% 
+            separate_rows(authors.y, sep=", ", convert=TRUE) %>%
+            mutate(authors.y = str_remove_all(authors.y, '"')) %>%
+            inner_join(select(nodes, id, label), by=c("authors.x" = "label")) %>% 
+            inner_join(select(nodes, id, label), by=c("authors.y" = "label")) %>% 
+            select(source = id.x, target = id.y) %>% 
+            filter(source < target) %>% 
+            group_by(source, target) %>%
+            summarize(weight = n()) %>% 
+            mutate(type = "undirected")
+          }
     }
-    
+
     if(input$entity == "institution"){
       nodes<-read_excel(input$file1$datapath) %>% 
         select(temp_id, institutions) %>%
@@ -371,7 +366,7 @@ server <- function(input, output) {
       }
     }
     
-    # Concepts ----
+# Concepts ----
     if(input$entity == "concept"){
       nodes<-read_excel(input$file1$datapath) %>% 
         select(temp_id, wikidata_concepts) %>%
@@ -477,7 +472,7 @@ server <- function(input, output) {
       
       if(input$network_type == "co-occurence") {
         edges = tibble()
-        
+          
       }
       if(input$network_type == "direct_citation"){
         edges = read_excel(input$file1$datapath) %>%
@@ -620,35 +615,35 @@ server <- function(input, output) {
       }
     }
     
-    export<-list("nodes" = nodes, "edges" = edges)
+        export<-list("nodes" = nodes, "edges" = edges)
     
-    
+
   }  
   )#close eventReactive
   
-  edgesData <- eventReactive(input$file1, {
+ edgesData <- eventReactive(input$file1, {
     req(input$file1)
     template <- read_excel(input$file1$datapath)
     
-    
-  })#cose eventReacgtive
+
+})#cose eventReacgtive
   
-  
+
   #downloadHandler----------------------------------------------------------
-  output$downloadNode <- downloadHandler(
-    #change filename to include entity, network, files selected
-    filename = function() {str_c("network_files_", input$entity, "_",input$network_type,"_", Sys.Date(), ".xlsx")},
-    content = function(file){
+output$downloadNode <- downloadHandler(
+  #change filename to include entity, network, files selected
+  filename = function() {str_c("network_files_", input$entity, "_",input$network_type,"_", Sys.Date(), ".xlsx")},
+  content = function(file){
       writexl::write_xlsx(nodesData(), file)}
   )#close downloadHandler
   
-  #  output$downloadEdges <- downloadHandler(
-  #    #change filename to include entity, network, files selected
-  #    filename = function() {paste("edges_", input$entity, "_",input$network_type,"_", Sys.Date(), ".csv")},
-  #    content = function(file){
-  #      write.csv(edgesData(), file, row.names = FALSE)}
-  #  )#close downloadHandler
-  
+#  output$downloadEdges <- downloadHandler(
+#    #change filename to include entity, network, files selected
+#    filename = function() {paste("edges_", input$entity, "_",input$network_type,"_", Sys.Date(), ".csv")},
+#    content = function(file){
+#      write.csv(edgesData(), file, row.names = FALSE)}
+#  )#close downloadHandler
+
 }#close server
 # Run the application ----------------------------------------------------------
 
